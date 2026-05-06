@@ -150,6 +150,9 @@ rustix = { workspace = true, features = ["param"] }
 [profile.release.build-override]
 opt-level = 0
 
+[patch.crates-io]
+tokio = { git = "https://github.com/pgrayy/tokio.git", branch = "external-event-loop" }
+
 [workspace]
 resolver = '2'
 members = [

@@ -31,7 +31,7 @@ wat = { workspace = true, optional = true }
 
 # Optional dependencies for the `wasi` feature
 cap-std = { workspace = true, optional = true }
-tokio = { workspace = true, optional = true, features = ["fs"] }
+tokio = { workspace = true, optional = true, features = ["fs", "rt", "time", "net", "io-util"] }
 wasmtime-wasi = { workspace = true, optional = true, features = ["p1"] }
 wasmtime-wasi-http = { workspace = true, optional = true, features = ["p2", "default-send-request"] }
 wasmtime-wasi-io = { workspace = true, optional = true, features = ["std"] }
@@ -43,7 +43,7 @@ futures = { workspace = true, optional = true }
 
 [features]
 # WASMTIME_FEATURE_LIST
-async = ['wasmtime/async', 'futures']
+async = ['wasmtime/async', 'futures', 'tokio']
 profiling = ["wasmtime/profiling"]
 cache = ["wasmtime/cache"]
 parallel-compilation = ['wasmtime/parallel-compilation']

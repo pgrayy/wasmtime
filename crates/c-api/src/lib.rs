@@ -91,6 +91,11 @@ mod r#async;
 #[cfg(feature = "async")]
 pub use crate::r#async::*;
 
+#[cfg(feature = "async")]
+mod async_driver;
+#[cfg(feature = "async")]
+pub use crate::async_driver::*;
+
 #[cfg(feature = "wasi")]
 mod wasi;
 #[cfg(feature = "wasi")]
