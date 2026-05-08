@@ -208,6 +208,48 @@ pub extern "C" fn wasmtime_call_future_poll(future: &mut wasmtime_call_future_t)
     }
 }
 
+/// A [`Waker`] that writes a byte to a socket when invoked.
+struct SocketWaker(i64);
+
+impl std::task::Wake for SocketWaker {
+    fn wake(self: std::sync::Arc<Self>) {
+        #[cfg(unix)]
+        unsafe {
+            libc::write(self.0 as libc::c_int, [1u8].as_ptr() as *const _, 1);
+        }
+        #[cfg(windows)]
+        unsafe {
+            windows_sys::Win32::Networking::WinSock::send(self.0 as usize, [1u8].as_ptr(), 1, 0);
+        }
+    }
+}
+
+/// Poll the call future with a notification socket.
+///
+/// Like `wasmtime_call_future_poll`, but instead of a no-op waker, uses a
+/// waker that writes a byte to `socket` when the future is ready to make
+/// progress. This allows a foreign event loop to sleep on the socket instead
+/// of busy-polling.
+///
+/// `socket` is the raw handle of the write end of a socket pair. On Unix this
+/// is a file descriptor; on Windows it is a `SOCKET` handle. The host should
+/// monitor the read end for readability.
+#[unsafe(no_mangle)]
+pub extern "C" fn wasmtime_call_future_poll_with_notify(
+    future: &mut wasmtime_call_future_t,
+    socket: i64,
+) -> bool {
+    let waker = Waker::from(std::sync::Arc::new(SocketWaker(socket)));
+    match future
+        .underlying
+        .as_mut()
+        .poll(&mut Context::from_waker(&waker))
+    {
+        Poll::Ready(()) => true,
+        Poll::Pending => false,
+    }
+}
+
 fn handle_call_error(
     err: wasmtime::Error,
     trap_ret: &mut *mut wasm_trap_t,
