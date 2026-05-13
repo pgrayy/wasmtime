@@ -1,0 +1,40 @@
+name: Test poll_with_notify
+
+on:
+  push:
+    branches: [ci/test-poll-with-notify, upstream/poll-with-notify]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install Ninja
+        uses: seanmiddleditch/gha-setup-ninja@master
+
+      - name: Build wasmtime C API
+        run: cargo build --release -p wasmtime-c-api
+
+      - name: Configure CMake
+        run: cmake -G Ninja -B build -S examples -DBUILD_TESTS=ON
+
+      - name: Build tests
+        run: ninja -C build
+
+      - name: Run async tests
+        run: ctest --test-dir build -R async --verbose
+        timeout-minutes: 2
+
+      - name: Run Rust integration test
+        run: cargo test -p wasmtime-cli --test all -- async_allow_sync
+        timeout-minutes: 5
